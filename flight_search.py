@@ -15,7 +15,10 @@ class FlightData:
                  destination_city,
                  destination_airport,
                  depart_date,
-                 return_date):
+                 return_date,
+                 airline,
+                 operating_carrier
+                 ):
         self.price = price
         self.origin_city = origin_city
         self.origin_airport = origin_airport
@@ -23,6 +26,8 @@ class FlightData:
         self.destination_airport = destination_airport
         self.depart_date = depart_date
         self.return_date = return_date
+        self.airline = airline
+        self.operating_carrier = operating_carrier
 
 
 class FlightSearch:
@@ -88,12 +93,9 @@ class FlightSearch:
             destination_city=data['route'][0]['cityTo'],
             destination_airport=data['route'][0]['flyTo'],
             depart_date=data['route'][0]['local_departure'].split('T')[0],
-            return_date=data['route'][1]['local_departure'].split('T')[0]
+            return_date=data['route'][1]['local_departure'].split('T')[0],
+            airline=data['route'][0]['airline'],
+            operating_carrier=data['route'][0]['operating_carrier']
         )
 
-        print(f"{flight_data.destination_city}: ${flight_data.price}, "
-              f"Depart: {flight_data.depart_date}, "
-              f"Return: {flight_data.return_date}, "
-              f"Airline: {data['route'][0]['airline']}, "
-              f"Operating Carrier: {data['route'][0]['operating_carrier']}")
         return flight_data

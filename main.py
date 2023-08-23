@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from data_manager import DataManager
 from flight_search import FlightSearch
+from notification_manager import NotificationManager
 
 """
 APIs Required
@@ -20,6 +21,7 @@ ORIGIN_CITY_IATA = "DFW"
 sheet = DataManager()
 sheet_data = sheet.get_data()
 flight_search = FlightSearch()
+notification_manager = NotificationManager()
 
 
 # Use the Flight Search and Sheety API to populate a Google Sheet with
@@ -38,25 +40,33 @@ if location_updated:
     sheet.update_city_codes()
 
 
-#  Use the Flight Search API to check for the cheapest flights from tomorrow
-#  to six months later for all the cities in the Google Sheet
+# Use the Flight Search API to check for the cheapest flights from tomorrow
+# to six months later for all the cities in the Google Sheet
 
 date_tomorrow = datetime.now() + timedelta(days=1)
 date_in_six_months = datetime.now() + timedelta(days=(6 * 30))
 
 for location in sheet_data:
-    flight = flight_search.check_flights(
+    flight_data = flight_search.check_flights(
         origin_city_code=ORIGIN_CITY_IATA,
         destination_city_code=location['iataCode'],
         depart_date=date_tomorrow.strftime("%d/%m/%Y"),
         return_date=date_in_six_months.strftime("%d/%m/%Y")
     )
 
-
-# TODO If the price is lower than the lowest price listed in the Google Sheet,
-#  then send an SMS via the Twilio API.
-# The SMS should include the departure airport IATA code, destination
-# airport IATA code, departure city, destination city, flight price and flight
-# dates.
-# E.g., Low price alert! Only $### to fly from DFW-DFW to Berlin-SXF, leaving
-# 2023-08-15 and returning 2023-08-23
+    # If the price is lower than the lowest price listed in the Google Sheet,
+    # then send an SMS via the Twilio API.
+    try:
+        if flight_data.price < location['lowestPrice']:
+            notification_manager.send_message(
+                f"🚨 Low Price Alert! 🚨\n"
+                f"🌎 {flight_data.destination_city}-"
+                f"{flight_data.destination_airport} "
+                f"💰 ${flight_data.price}\n"
+                f"🛫 Depart: {flight_data.depart_date}\n"
+                f"🛬 Return: {flight_data.return_date}\n"
+                f"✈️ Airline: {flight_data.airline}, "
+                f"Operating Carrier: {flight_data.operating_carrier}"
+            )
+    except AttributeError:
+        continue
