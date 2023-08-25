@@ -1,10 +1,14 @@
 import requests
 import os
 
-SHEETY_ENDPOINT = ("https://api.sheety.co/02cf0db9fdbf9c243cb6bd20502be4be/"
-                   "flightDeals/prices")
-SHEETY_HEADERS = {
-            "Authentication": f"Bearer {os.environ['SHEETY_BEARER_TOKEN']}"
+SHEETY_ENDPOINT = "https://api.sheety.co"
+SHEETY_USERNAME = os.environ['SHEETY_USERNAME']
+SHEETY_BEARER_TOKEN = os.environ['SHEETY_BEARER_TOKEN']
+
+project_url = f"{SHEETY_ENDPOINT}/{SHEETY_USERNAME}/flightDeals"
+headers = {
+            "Authentication": f"Bearer {SHEETY_BEARER_TOKEN}",
+            "Content-Type": "application/json"
         }
 
 
@@ -13,8 +17,12 @@ class DataManager:
     def __init__(self):
         self.data = {}
 
-    def get_data(self):
-        response = requests.get(url=SHEETY_ENDPOINT, headers=SHEETY_HEADERS)
+    def get_location_data(self):
+        response = requests.get(
+            url=f"{project_url}/prices",
+            headers=headers
+        )
+        response.raise_for_status()
         self.data = response.json()['prices']
         return self.data
 
@@ -26,9 +34,10 @@ class DataManager:
                 }
             }
 
-            response = requests.put(url=f"{SHEETY_ENDPOINT}/{location['id']}",
-                                    json=new_data,
-                                    headers=SHEETY_HEADERS
-                                    )
+            response = requests.put(
+                url=f"{project_url}/prices/{location['id']}",
+                headers=headers,
+                json=new_data
+            )
             response.raise_for_status()
             print(response.text)

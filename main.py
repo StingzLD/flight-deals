@@ -19,7 +19,6 @@ https://www.nationsonline.org/oneworld/airport_code.htm
 ORIGIN_CITY_IATA = "DFW"
 
 sheet = DataManager()
-sheet_data = sheet.get_data()
 flight_search = FlightSearch()
 notification_manager = NotificationManager()
 
@@ -27,16 +26,17 @@ notification_manager = NotificationManager()
 # Use the Flight Search and Sheety API to populate a Google Sheet with
 # International Air Transport Association (IATA) codes for each city
 
+location_data = sheet.get_location_data()
 location_updated = False
 
-for location in sheet_data:
+for location in location_data:
     if not location['iataCode']:
         location['iataCode'] = flight_search.get_city_code(location['city'])
         location_updated = True
-        print(sheet_data)
+        print(location_data)
 
 if location_updated:
-    sheet.data = sheet_data
+    sheet.data = location_data
     sheet.update_city_codes()
 
 
@@ -46,7 +46,7 @@ if location_updated:
 date_tomorrow = datetime.now() + timedelta(days=1)
 date_in_six_months = datetime.now() + timedelta(days=(6 * 30))
 
-for location in sheet_data:
+for location in location_data:
     flight_data = flight_search.check_flights(
         origin_city_code=ORIGIN_CITY_IATA,
         destination_city_code=location['iataCode'],
@@ -57,7 +57,8 @@ for location in sheet_data:
     # If the price is lower than the lowest price listed in the Google Sheet,
     # then send an SMS via the Twilio API.
     try:
-        if flight_data.price < location['lowestPrice']:
+        if (flight_data.destination_city == "Paris" and
+                flight_data.price < location['lowestPrice']):
             notification_manager.send_message(
                 f"🚨 Low Price Alert! 🚨\n"
                 f"🌎 {flight_data.destination_city}-"
